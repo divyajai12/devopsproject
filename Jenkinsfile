@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = 'DockerHub'  // your DockerHub username
+        // You can optionally remove DOCKER_USER from here, 
+        // since we'll load it dynamically via withCredentials
+        // DOCKER_USER = 'DockerHub'
     }
 
     stages {
@@ -23,12 +25,12 @@ pipeline {
         }
         stage('Docker Build') {
             steps {
-                bat 'docker build -t %DOCKER_USER%/myapp:%BUILD_NUMBER% .'
+                bat 'docker build -t DockerHub/myapp:%BUILD_NUMBER% .'
             }
         }
         stage('Docker Push') {
             steps {
-                withCredentials([string(credentialsId: 'dockerhub-creds', variable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     bat '''
                         echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
                         docker push %DOCKER_USER%/myapp:%BUILD_NUMBER%
