@@ -4,19 +4,19 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/divyajai12/devopsproject.git'
+                git branch: 'main', 
+                    url: 'https://github.com/divyajai12/devopsproject.git',
+                    credentialsId: ''  // or your GitHub creds ID
             }
         }
         stage('Build') {
             steps {
                 sh 'echo Building application...'
-                // Add your build commands here
             }
         }
         stage('Test') {
             steps {
                 sh 'echo Running tests...'
-                // Add your test commands here
             }
         }
         stage('Docker Build') {
@@ -35,7 +35,6 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh 'echo Deploying application...'
-                // Add your deployment commands here
             }
         }
     }
