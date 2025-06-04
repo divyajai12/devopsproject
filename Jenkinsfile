@@ -22,6 +22,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                   bat ' echo DOCKER_USER is [%DOCKER_USER%]'
                     bat 'docker build -t "%DOCKER_USER%/myapp:%BUILD_NUMBER%" .'
                 }
             }
