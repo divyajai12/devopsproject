@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        // You can optionally remove DOCKER_USER from here, 
-        // since we'll load it dynamically via withCredentials
-        // DOCKER_USER = 'DockerHub'
-    }
-
     stages {
         stage('Checkout') {
             steps {
