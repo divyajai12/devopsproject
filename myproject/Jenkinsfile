@@ -1,0 +1,30 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Build and Deploy') {
+      steps {
+        script {
+          // Build and deploy your containers
+          sh 'docker-compose up -d --build'
+        }
+      }
+    }
+
+    stage('Health Check') {
+      steps {
+        script {
+          def status = sh(script: 'curl -f http://localhost:3000/health', returnStatus: true)
+          if (status != 0) {
+            echo 'Health check failed! Rolling back...'
+            // Stop current containers
+            sh 'docker-compose down'
+            // Redeploy previous stable version (you need to implement how to keep previous version)
+            sh 'docker-compose up -d --no-build'
+            error('Deployment failed and rollback executed.')
+          }
+        }
+      }
+    }
+  }
+}
