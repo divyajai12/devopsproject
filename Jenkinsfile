@@ -21,8 +21,9 @@ pipeline {
         }
         stage('Docker Build') {
             steps {
-                // Tag image with your Docker Hub username/repo, mandatory for push
-                bat 'docker build -t yourdockerhubusername/myapp:%BUILD_NUMBER% .'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    bat 'docker build -t %DOCKER_USER%/myapp:%BUILD_NUMBER% .'
+                }
             }
         }
         stage('Docker Push') {
@@ -30,7 +31,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     bat '''
                         echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                        docker push DockerHub/myapp:%BUILD_NUMBER%
+                        docker push %DOCKER_USER%/myapp:%BUILD_NUMBER%
                     '''
                 }
             }
