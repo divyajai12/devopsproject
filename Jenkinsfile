@@ -5,7 +5,7 @@ pipeline {
         GIT_REPO = 'https://github.com/divyajai12/devopsproject.git'
         DOCKER_IMAGE = "divyajai123/myapp"
         DOCKER_REGISTRY_CREDENTIALS = 'dockerhub-creds'
-        EMAIL_RECIPIENTS = 'your-email@example.com'  // <-- change this to your email
+        EMAIL_RECIPIENTS = 'divyajai207@gmail.com'  // <-- change this to your email
     }
 
     stages {
