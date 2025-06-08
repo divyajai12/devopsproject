@@ -5,7 +5,7 @@ pipeline {
         GIT_REPO = 'https://github.com/divyajai12/devopsproject.git'
         DOCKER_IMAGE = "divyajai123/myapp"
         DOCKER_REGISTRY_CREDENTIALS = 'dockerhub-creds'
-        EMAIL_RECIPIENTS = 'divyajai207@gmail.com'  // <-- change this to your email
+        EMAIL_RECIPIENTS = 'divyajai207@gmail.com'
     }
 
     stages {
@@ -36,14 +36,16 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building application...'
-                // Add your build commands here, e.g. 'npm install' or 'mvn package'
+                // Example Windows-friendly build command (customize for your app)
+                bat 'echo Build step running on Windows'
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                // Add your test commands here
+                // Example Windows-friendly test command
+                bat 'echo Test step running on Windows'
             }
         }
 
@@ -53,7 +55,7 @@ pipeline {
                     docker.withRegistry('https://index.docker.io/v1/', env.DOCKER_REGISTRY_CREDENTIALS) {
                         def image = docker.build("${env.DOCKER_IMAGE}:${env.NEW_VERSION}")
                         image.push()
-                        image.push('latest')  // Optionally tag latest
+                        image.push('latest')
                     }
                 }
             }
@@ -63,6 +65,7 @@ pipeline {
             steps {
                 script {
                     try {
+                        // Use Windows batch commands
                         bat 'docker-compose down'
                         bat 'docker-compose up -d --build'
                     } catch (err) {
@@ -75,7 +78,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    // Example health check command; adjust as needed
+                    // curl might not be available by default on Windows; try using PowerShell or wget if curl is missing
                     def result = bat(returnStatus: true, script: 'curl -f http://localhost:8080/health || exit 1')
                     if (result != 0) {
                         error "Health check failed!"
