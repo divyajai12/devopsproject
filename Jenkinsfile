@@ -25,20 +25,31 @@ pipeline {
           writeFile file: 'version.txt', text: newVersion
           writeFile file: 'app_version.txt', text: newVersion
           currentBuild.description = "App version: ${newVersion}"
+
+          // Optional: Commit version bump back to repo (uncomment if needed)
+          /*
+          bat '''
+            git config user.email "jenkins@yourdomain.com"
+            git config user.name "Jenkins CI"
+            git add version.txt
+            git commit -m "Bump version to ${newVersion}"
+            git push origin main
+          '''
+          */
         }
       }
     }
 
     stage('Build') {
       steps {
-        sh 'echo Building application...'
+        bat 'echo Building application...'
         // Insert actual build commands here (e.g. npm run build)
       }
     }
 
     stage('Test') {
       steps {
-        sh 'echo Running tests...'
+        bat 'echo Running tests...'
         // Insert test commands here
       }
     }
@@ -47,19 +58,10 @@ pipeline {
       steps {
         script {
           def appVersion = readFile('app_version.txt').trim()
-          withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            sh """
-              echo Logging into DockerHub...
-              echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
 
-              echo Building Docker image...
-              docker build -t \$DOCKER_USER/myapp:${appVersion} .
-
-              echo Pushing Docker image...
-              docker push \$DOCKER_USER/myapp:${appVersion}
-
-              docker logout
-            """
+          docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDENTIALS) {
+            def image = docker.build("${env.DOCKER_USER}/myapp:${appVersion}")
+            image.push()
           }
         }
       }
@@ -67,21 +69,23 @@ pipeline {
 
     stage('Deploy with Docker Compose') {
       steps {
-        sh 'docker-compose up -d --build'
+        bat 'docker-compose up -d --build'
       }
     }
 
     stage('Health Check') {
       steps {
         script {
-          def status = sh(script: 'curl -f http://localhost:3000/health', returnStatus: true)
-          if (status != 0) {
-            echo 'Health check failed! Rolling back deployment...'
-            sh 'docker-compose down'
-            sh 'docker-compose up -d --no-build'
-            error('Deployment failed and rollback completed.')
-          } else {
-            echo 'Health check passed.'
+          timeout(time: 2, unit: 'MINUTES') {
+            retry(3) {
+              def status = bat(script: 'curl -f http://localhost:3000/health', returnStatus: true)
+              if (status != 0) {
+                echo 'Health check failed on attempt. Retrying...'
+                error('Health check failed')
+              } else {
+                echo 'Health check passed.'
+              }
+            }
           }
         }
       }
