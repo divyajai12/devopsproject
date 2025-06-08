@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     DOCKERHUB_CREDENTIALS = 'dockerhub-creds' // Jenkins credential ID
+    DOCKER_USER = 'divyajai123'               // Your Docker Hub username
   }
 
   stages {
@@ -25,17 +26,6 @@ pipeline {
           writeFile file: 'version.txt', text: newVersion
           writeFile file: 'app_version.txt', text: newVersion
           currentBuild.description = "App version: ${newVersion}"
-
-          // Optional: Commit version bump back to repo (uncomment if needed)
-          /*
-          bat '''
-            git config user.email "jenkins@yourdomain.com"
-            git config user.name "Jenkins CI"
-            git add version.txt
-            git commit -m "Bump version to ${newVersion}"
-            git push origin main
-          '''
-          */
         }
       }
     }
@@ -59,9 +49,12 @@ pipeline {
         script {
           def appVersion = readFile('app_version.txt').trim()
 
-          docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDENTIALS) {
-            def image = docker.build("${env.DOCKER_USER}/myapp:${appVersion}")
-            image.push()
+          // Set Docker context explicitly to avoid endpoint issues
+          withEnv(['DOCKER_HOST=npipe:////./pipe/docker_engine']) {
+            docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDENTIALS) {
+              def image = docker.build("${env.DOCKER_USER}/myapp:${appVersion}")
+              image.push()
+            }
           }
         }
       }
@@ -80,7 +73,7 @@ pipeline {
             retry(3) {
               def status = bat(script: 'curl -f http://localhost:3000/health', returnStatus: true)
               if (status != 0) {
-                echo 'Health check failed on attempt. Retrying...'
+                echo 'Health check failed. Retrying...'
                 error('Health check failed')
               } else {
                 echo 'Health check passed.'
@@ -95,25 +88,9 @@ pipeline {
   post {
     success {
       echo "Build and deployment succeeded."
-      // Uncomment when Email Extension plugin is configured:
-      /*
-      emailext(
-        subject: "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-        body: "Good news! The build succeeded.\n\nDetails: ${env.BUILD_URL}",
-        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-      )
-      */
     }
     failure {
       echo "Build or deployment failed."
-      // Uncomment when Email Extension plugin is configured:
-      /*
-      emailext(
-        subject: "FAILURE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-        body: "Oops! The build failed.\n\nDetails: ${env.BUILD_URL}",
-        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-      )
-      */
     }
     always {
       echo 'Pipeline finished.'
