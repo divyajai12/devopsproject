@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     // Set DockerHub credentials environment variables
-    DOCKERHUB_CREDENTIALS = 'divyajai123' // Jenkins credentials ID
+    DOCKERHUB_CREDENTIALS = 'dockerhub-creds' // Jenkins credentials ID
   }
 
   stages {
